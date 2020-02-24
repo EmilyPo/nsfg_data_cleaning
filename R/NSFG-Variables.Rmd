@@ -1,0 +1,234 @@
+9i9---
+title: "NSFG Variables"
+author: "Emily Pollock"
+date: "10/25/2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+*this assumes nsfg already in environment*
+`r x <- nsfg %>% filter(age >= 15, age <=29)`
+
+
+*demographics*
+__sex__ - numeric, 1 = female, 2 = male
+`r count(x, sex); sum(is.na(x$sex))`  # no missing data 
+
+__age__ - age, numeric
+`r count(x, age); sum(is.na(x$age))` # no missing data 
+
+__age.cat__ - categorical, corresponds to census age groups (used for re-weighting)
+`r sum(is.na(x$age.cat))` # no missing 
+
+__race4__ - categorical (b,h,o,w), based on 4 race groups (original = 1-hispanic, 2-nh white, 3- nh black, 4-other)
+`r count(x, race.4); sum(is.na(x$race.4))`  no missing 
+
+__sexgrp__ lifetime sex / sexpref variable
+  1-F
+  2-MSF
+  3-MSMF
+  4-MSM
+  7-no p in last year
+  8-never had sex
+
+__sexgrp.yr__ last year sex / sex pref variable (same values as above)
+
+__vsnpyr__ - number of vaginal sex partners in last year (consensus variable). same as PARTS1YR except NAs (never sex) are also set to 0
+
+*general sexual history*  
+
+__vsex.main__ - had sex w/ OS partner, 1-yes, 2-no
+`r count(x, vsex.main); sum(is.na(x$vsex.main))` # no missing 
+
+__vsnplife__ - number of OS partners in lifetime (recode)
+`r count(x, vsnplife); sum(is.na(x$vsnplife))` # no missing 
+
+__vsnpyr.main__ - number of OS partners in last year (recode)
+`r count(x, vsnpyr.main); sum(is.na(x$vsnpyr.main))` # no missing (in original, some missing b/c not asked for females who reported 0 partners in their life, those now set to 0)
+
+__sex4wk__ - numeric, number of times OS sex in last 4 weeks (not partner specific) 
+__cond4wk__ - num, number of times condom was used during OS sex in last 4 weeks  
+__p.cond__ 
+  - num, proportion of of sex acts where condom was used in last 4 weeks
+  - calculated from sex4wk & cond4wk
+
+*partner specific variables*  
+
+__optype(1-3)__ 
+
+1-current spouse 
+2-current cohab
+3-former spouse
+4-former cohab
+5-other
+6-fewer partners
+8-never had sex
+9-miss/df/ref  
+
+rel1-3 (ACTIVE rel type variable)
+1-current spouse
+2-current cohab
+3-other
+6-fewer partners
+8- never sex
+9-missing/ref/dk
+
+
+# condom use
+condls(1-3)
+confls(1-3)
+
+0 - no condom 
+1 - yes condom 
+condom use at last/first sex with partner (6-9 fewer, never, misisng)
+both males and females asked at FIRST sex with partner
+females only at LAST sex with partner
+
+
+
+
+
+
+
+ - For most partners in last year - P1YRELP(1-3), females only, can select married/was married/cohab/was cohab/first sexual partner/none of the above. (asked regardless of dls, but not if never had sex, other reasons I'm not sure about)
+ - Recoded RELATP(1-3), relationship at time of first sex for partners in last 12 months, to match current married / current cohab / other coding (missingness due to never having had sex, no sex in last 12 mo)
+ - `r count(x, age, is.na(RELATP1), vsex.main==1, dls1 < 12)`
+ - P1YRN is relationship type as R would currently describe it, for rels that have lasted longer than 1 month and R is not currnently separated from this husband - asked AFTER P1YRELP, not to many people, and most say they are 'going steady' it so may not really be that useful anyway. not currently used in optype variable calculation) 
+ 
+__prace(1-3)__ - race of 3 most recent sexual partners 
+  - partner race is missing for one-off partners of women  
+  - ALSO women whose rel type is 5 (other) and not a current partner 
+  - most other missingness in young respondents valid - never had sex
+
+__len(1-3)__  
+ - numeric  
+ - length of up to 3 most recent partnerships (in last 12 months), in months (between first sex and last sex)  
+ - variable created from PARTDUR(1-3), except PARTDUR =0 (less than one month) now = 0.5
+
+__once(1-3)__  
+  - 1 for partdur = only had sex once 
+  - 0 for more than once 
+ 
+__active(1-3)__  
+ - whether or not R considers P to be a current partner  
+ - 0 no, 
+ - 1 yes, 
+ - 2 dls not in last year  
+ - 6 fewer partmers
+ - 8 never had sex 
+ - 9 dk/missing/ref
+ 
+__page(1-3)__
+ - calculated based on R's current age as reference. (e.g. if R was 20 when relationship started and reported parter was 22 but R is now 21, page=23)  
+ 
+- NEED TO INCLUDE ACASI VARIABLES! DO I? CURRPAGE exists in 2011-2015 nsfg b/c acasi not in separate file - are the older acasi variables included in the counts for the 2006-2010 wave? 
+   missing data - 97/98/99
+ 
+ for under 18 and before 2011, CURRPAGE and page should be similar - although page(1-3) has been processed to be relative to current R age....
+ 
+ P1YHSAGE = age of partner at first sex with that partner if R is over 18 OR under 18 and partner in question is not a current partner, or no partners in last 12 months 
+ Acasi only used for current partners! 
+ a few people under 18 in first wave still have current partners, and have values for page1 - because that partner isn't the one that is current, it's just the most recent OR because they are currently married/cohabing with that partner 
+ 
+ so page1 can be filled, and represnts age of most recent partner, but NOT current partner
+ 
+ example - there are a few hundred rs under 18 who have a current partner whose age that can be salvaged by CURRPAGE 
+ 
+ filter(x, age < 18, is.na(page1), active1==1, CURRPAGE<90) %>% count(intyr) 
+ 
+ BUT DOES PAGE1 NA ALWAYS EQUAL CURRPAGE? OR IF PAGE1 IS FILLED, THEN PAGE2 SHOULD BE CURRPAGE OR CURRPAGE2?? currpage is first current partner - but 
+ 
+ *need to supplement with acasi CURRPAGE if active ==1 but page == NA*  
+  - make sure to correct for current respondent age like mm's page variable 
+  - make sure post 2010 adols follow this rule
+  
+logic of the CURRPAGE / page issue - FOR FIRST WAVE. Might need to go back and check mm's code for second wave - don't think the loop works right for currpage, doesn't throw and error, but is wrong 
+
+if age < 18 & intyr < 2011
+1st current partner: 
+IF page1 = NA & active1 = 1 & CURRPAGE < 90 THEN page1 = CURRPAGE
+IF page1 > 0 & page2 = NA & active2 = 1 & CURRPAGE < 90 THEN page2 = CURRPAGE 
+IF page1 > 0 & page2 >0 & page3 = NA & active3 = 1 & CURRPAGE < 90 THEN page3 = CURRPAGE
+
+2nd current partner: 
+IF page1 > 0 & page2 = NA & active2 = 1 & CURRPAGE2 < 90 THEN page2 = CURRPAGE2 
+IF page1 > 0 & page2 >0 & page3 = NA & active3 = 1 & CURRPAGE2 < 90 THEN page3 = CURRPAGE2
+
+3rd current partner: 
+IF page1 > 0 & page2 > 0 & page3 = NA & active3 = 1 & CURRPAGE3 < 90 THEN page3 = CURRPAGE3
+
+
+
+__d.sqrt.age(1-3)__ - num, absolute value of the difference in the square root of ego's age and partner's age (for up to 3 partners)  
+__d.sqrt.age__ - num, average absolute valude of the difference in the square root of ego's age and partners' ages  
+__VRY1STSX__ century month of first OS sex  
+__cmbirth__ centry month of ego birth  
+
+
+
+
+
+** Key R variables:
+  CASEID CMINTVW RACE HISPRACE HISPRACE2 AGER CMBIRTH 
+  HIEDUC TOTINCR CURR_INS 
+  HADSEX MARSTAT LIFPRTS PARTS12 FMARNO VRY1STSX VRY1STAG CURRPRTT CURRPRTS.
+
+* Partner matching variables
+ SAMEMAN WHOFSTPR WHOSNC1Y
+ MATCHFP	MATCHFP2	MATCHFP3
+ MATCHHP	MATCHHP2	MATCHHP3
+
+* PTYPE
+ F: WHOFSTPR (for S/C) p1yrelp p1yrelp2 p1yrelp3 (for O)
+ O: plyrelp plyrelp2 plyrelp3
+*  RELATP1 RELATP2 RELATP3 for relation at time of fsex.
+
+* First sex date 
+ F: VRY1STSX
+ S/C/O: CMFSEXTOT CMFSEXTOT2 CMFSEXTOT3
+
+* Last sex date 
+ Overall: LSEXDATE
+ F: CMLSEXFP 
+ S/C/O: CMLSEXX CMLSEXX2 CMLSEXX3
+
+* Duration
+ PARTDUR1 PARTDUR2 PARTDUR3
+
+* Active status
+	F: STILFPSX
+ S: if current, assumed yes otherwise?
+ C: if current, assumed yes
+ O:  PCURRNTX PCURRNTX2 PCURRNTX3
+
+* Race
+ S: HSBNRACE	HSBNRACE1	HSBNRACE2	HSBNRACE3 HSBNRACE4 HSBNRACE5 (no CUR or 6th)
+ C: CURCOHNRACE	COH1NRACE	(no 2-4)
+ F: FSEXNRACE 	
+ O: P1YNRACE1 P1YNRACE2 P1YNRACE3
+
+* Age
+ S: CMDOBCH CMHSBDOBX CMHSBDOBX2 CMHSBDOBX3 CMHSBDOBX4 CMHSBDOBX5 CMHSBDOBX6
+ C: CMDOBCP CMDOBCX CMDOBCX2 CMDOBCX3 CMDOBCX4 
+ F: VRY1STAG  FPAGE FPRELAGE FPRELYRS
+ O: P1YHSAGE P1YHSAGE2 P1YHSAGE3
+ LSEXPAGE
+
+* Condom use vars
+  CONDOMR PST4WKSX PST4WKSX PSWKCOND1 PSWKCOND2 P12MOCON 
+   LSTMTHP1 LSTMTHP2 LSTMTHP3 LSTMTHP4 
+   LSTMTHP5 LSTMTHP6 LSTMTHP7 LSTMTHP8 
+   LSTMTHP9 LSTMTHP10 LSTMTHP11 LSTMTHP12
+   
+   FSTMTHP1 FSTMTHP2 FSTMTHP3 FSTMTHP4 
+   FSTMTHP5 FSTMTHP6 FSTMTHP7 FSTMTHP8 
+   FSTMTHP9 FSTMTHP10 FSTMTHP11 FSTMTHP12.
+   
+
+* Imputation flags
+  HIEDUC_I HISPANIC_I RACE_I HISPRACE_I HADSEX_I LIFPRTNR_I 
+  LSEXDATE_I PARTS1YR_I  PARTDUR1_I PARTDUR2_I PARTDUR3_I 
+  FINALWGT30 WGTQ1Q16 WGTQ9Q16 WGTQ5Q16 WGTQ1Q8
+

@@ -1,0 +1,15 @@
+# Race Imputations
+
+two reasonably simple strategies (both single imputation): 
+
+1) hot deck imputation 
+
+  missing values are assigned based on 
+  
+2) random number generator w/ race proportions targets to decide
+
+
+not doing multiple imputation or other more complex forms because I'm not trying to predict the race distribution or really accurately capture the variance in a regression - I am using the race distributions we know about (active partnerships) to assign race values to ones we don't (inactive partnerships)
+
+we assume no race distribution difference between active & inactive, but we do stratify targets (or "donors") by ego sex, race, and relatoinship type (marcoh/other)
+
