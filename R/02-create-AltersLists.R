@@ -8,10 +8,10 @@
 library(tidyverse)
 
 # load nsfg rds
-nsfg_complete <- readRDS("~/NSFG_DATA/Full/nsfg_complete.rds")
+nsfg_complete <- readRDS("~/nsfg_data_cleaning/Full/nsfg_complete.rds")
 
 # source JKB's functions that we will need 
-source("~/NSFG_DATA/R/egodata_functions.R")
+source("~/nsfg_data_cleaning/R/egodata_functions.R")
 
 # we will need:
 #  1. ego object 
@@ -35,7 +35,7 @@ ego_vars <- c("ego", "intyr",
 
 egos <- nsfg_complete %>% select(ego_vars)
 
-saveRDS(egos, file="~/NSFG_DATA/Objects/egos.rds")
+saveRDS(egos, file="~/nsfg_data_cleaning/Objects/egos.rds")
 
 ########################################################################
 ##### ALTER OBJECTS
@@ -88,15 +88,33 @@ alters_all <- alters %>%
   mutate(edge_id = row_number()) 
 
 
+alters_allactivepartners <- alters %>%
+  filter(optype<6) %>%
+  rename(race = prace, edge_age_month = len, age=page) %>% 
+  mutate(sqrtage = sqrt(age)) %>%
+  mutate(agesquared = age^2) %>%
+  mutate(reltype = ifelse(optype == 1, "Cur/Fmr Spouse",
+                          ifelse(optype == 2, "Cur/Fmr Cohab",
+                                 ifelse(optype == 3, "Cur/Fmr Spouse", 
+                                        ifelse(optype == 4, "Cur/Fmr Cohab", 
+                                               ifelse(optype == 5, "Other", NA)))))) %>%
+  mutate(network1 = ifelse((reltype %in% "Cur/Fmr Spouse" | reltype %in% "Cur/Fmr Cohab"), "marcoh", 
+                           ifelse(reltype %in% "Other", "other", "inst"))) %>%
+  mutate(network2 = ifelse(once==1 & active==0, "inst", "main")) %>%
+  filter(active==1)  %>% 
+  mutate(edge_id = row_number()) 
+
+
 ##### SAVE OUT ACTIVE PARTS OBJECT TO BE USED FOR ERGM EGO ANALYSIS
 # and also one-times
 alters_once <- alters_all %>% filter(active==0, once==1)
-saveRDS(alters_once, file="~/NSFG_DATA/Objects/alters_once.rds")
+saveRDS(alters_once, file="~/nsfg_data_cleaning/Objects/alters_once.rds")
 
 alters_active <- alters_all %>% filter(active==1)
 alters_inactive <- alters_all %>% filter(active==0)
-saveRDS(alters_active , file="~/NSFG_DATA/Objects/alters_active.rds")
-saveRDS(alters_inactive, file="~/NSFG_DATA/Objects/alters_inactive.rds")
+saveRDS(alters_active , file="~/nsfg_data_cleaning/Objects/alters_active.rds")
+saveRDS(alters_inactive, file="~/nsfg_data_cleaning/Objects/alters_inactive.rds")
+saveRDS(alters_allactivepartners, file="~/nsfg_data_cleaning/Objects/alters_allactivepartners.rds")
 
 ########################################################################
 ##### EGO + ALTER MERGES FOR EPIMODEL EDA
@@ -115,7 +133,7 @@ egos4alters <- egos4alters[order(egos4alters$edge_id),]
 
 sum(egos4alters$edge_id!=alters_active$edge_id)
 
-saveRDS(egos4alters, file="~/NSFG_DATA/Objects/egos4alters.rds")
+saveRDS(egos4alters, file="~/nsfg_data_cleaning/Objects/egos4alters.rds")
 
 ########################################################################
 ####### ALTERS + EGOS MERGES FOR SURVIVAL ANALYSIS ##########
@@ -173,13 +191,13 @@ alters_egos <- alters_egos %>%
 # salvage weird instances where partsyr3 ==0 but deg.main >0
  mutate(e.partsyr3 = ifelse(e.partsyr3 == 0 & alter > 0, alter, e.partsyr3)) 
 
-saveRDS(alters_egos, file="~/NSFG_DATA/Objects/altersegos_survdat.rds")
+saveRDS(alters_egos, file="~/nsfg_data_cleaning/Objects/altersegos_survdat.rds")
 
 ########################################################################
 #### SAVE OUT ABOVE BUT ONLY ACTIVE PARTNERS FOR DESCRIPTIVES BOOK 
 ########################################################################
 
 alters_egos_active <- alters_egos %>% filter(active==1)
-saveRDS(alters_egos_active, file="~/NSFG_DATA/Objects/altersegos_active.rds")
+saveRDS(alters_egos_active, file="~/nsfg_data_cleaning/Objects/altersegos_active.rds")
 
 
